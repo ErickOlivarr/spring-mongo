@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  mongo-db:
+    container_name: mongo-db
+    image: mongo:6.0.6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo-user
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    networks:
+      - spring-mongo
+    ports:
+      - 27018:27017
+    volumes:
+      - ./mongo-volume:/data/db
+    restart: always
+
+networks:
+  spring-mongo:
+    name: spring-mongo
+
+volumes:
+  mongo-volume:
+    name: mongo-volume
