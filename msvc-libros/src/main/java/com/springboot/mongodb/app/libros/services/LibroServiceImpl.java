@@ -224,6 +224,7 @@ public class LibroServiceImpl implements LibroService {
     @Override
     @Transactional(readOnly = true)
     public List<Autor> filtrarAutor(String termino, Integer edad) {
+        //Aqui se hace una consulta al autor
         return autorRepository.encontrarAutorConEdad(termino, edad);
     }
 }
