@@ -9,6 +9,6 @@ public interface LibroDto {
 
     public String getNombre();
     public String getIsbn();
-    public List<Autor> getAutor();
+    //public List<Autor> getAutor();
 
 }

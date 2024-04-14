@@ -8,16 +8,14 @@ import com.springboot.mongodb.commons.microservicios.models.Libro;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -167,5 +165,42 @@ public class LibroController {
     public ResponseEntity<?> filtroAutor(@PathVariable String termino, @PathVariable Integer edad) {
         return ResponseEntity.status(HttpStatus.OK).body(libroService.filtrarAutor(termino, edad));
     }
+
+    @GetMapping("/proyeccion")
+    public ResponseEntity<?> proyeccion() {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.proyeccion());
+    }
+
+    @GetMapping("/proyeccion-autor")
+    public ResponseEntity<?> proyeccionAutor() {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.proyeccionAutor());
+    }
+
+    @GetMapping("/aggregation-autor/{fecha}")
+    public ResponseEntity<?> proyeccionAutor(@PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") Date fecha) {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.aggregation(fecha));
+    }
+
+    @GetMapping("/aggregation-autor-2/{edad}")
+    public ResponseEntity<?> proyeccionAutor(@PathVariable Integer edad) {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.aggregation2(edad));
+    }
+
+    @GetMapping("/aggregation-autor-3")
+    public ResponseEntity<?> proyeccionAutor2() {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.sumatoriaEdades());
+    }
+
+    @GetMapping("/aggregation-autor-4")
+    public ResponseEntity<?> proyeccionAutor3() {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.sumatoriaEmailConMx());
+    }
+
+    /*
+    @GetMapping("/aggregation-autor-5")
+    public ResponseEntity<?> proyeccionAutor4() {
+        return ResponseEntity.status(HttpStatus.OK).body(libroService.autoresAg());
+    }
+    */
 
 }

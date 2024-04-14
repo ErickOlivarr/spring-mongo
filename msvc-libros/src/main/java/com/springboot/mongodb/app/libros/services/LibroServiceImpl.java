@@ -2,6 +2,9 @@ package com.springboot.mongodb.app.libros.services;
 
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoWriteException;
+import com.springboot.mongodb.app.libros.dto.AutorDto;
+import com.springboot.mongodb.app.libros.dto.AutorDto2;
+import com.springboot.mongodb.app.libros.dto.AutorDto3;
 import com.springboot.mongodb.app.libros.dto.LibroDto;
 import com.springboot.mongodb.app.libros.enums.CamposLibro;
 import com.springboot.mongodb.app.libros.error.ErrorPersonalizado;
@@ -227,4 +230,48 @@ public class LibroServiceImpl implements LibroService {
         //Aqui se hace una consulta al autor
         return autorRepository.encontrarAutorConEdad(termino, edad);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LibroDto> proyeccion() {
+        return libroRepository.proyeccion();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AutorDto> proyeccionAutor() {
+        return autorRepository.proyeccion();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AutorDto> aggregation(Date fecha) {
+        return autorRepository.aggregation(fecha);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AutorDto3> aggregation2(Integer edad) {
+        List<AutorDto3> lista = autorRepository.aggregation2(edad);
+        return lista;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer sumatoriaEdades() {
+        return autorRepository.aggregation3();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer sumatoriaEmailConMx() {
+        return autorRepository.aggregation4();
+    }
+
+    /*
+    @Override
+    public List<Autor> autoresAg() {
+        return autorRepository.aggregatetion5();
+    }
+    */
 }

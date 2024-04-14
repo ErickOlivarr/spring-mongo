@@ -24,4 +24,7 @@ public interface LibroRepository extends MongoRepository<Libro, String> {
     @Query(value = "{ $and: [ { $or: [ {nombre:/?0/}, {isbn: /?0/} ] }, { $expr: { $lte: [ { $subtract: [ { $subtract: [ {$year: '$$NOW'}, {$year: } ] }, {} ] } , ?1 ] } } ] }")
     public List<Libro> encontrarConEdad(String termino, Integer edad);
 
+    @Query(value = "{}") //asi se puede hacer una proyeccion, poniendo una interfaz como proyeccion con los metodos getter de los campos que queremos retornar como lo visto en la guia de spring boot 2023, aunque ahi se hace con mysql pero pues asi como aqui se haría con mongodb, por eso en la siguiente linea pusimos LibroDto porque esa es una interfaz para hacer nuestra proyeccion en la cual solo se mostrarán el atributo nombre y el atributo isbn del Libro, e igual aqui pudimos haberle puesto un filtro al @Query pero en este caso no le pusimos ningun filtro, asi que asi traería todos los libros, e igual aqui podemos poner el atributo fields del @Query que se explicó arriba y ponerle ahi solo los atributos de nombre e isbn en true y hubiera sido lo mismo, resultaría en lo mismo, asi que asi se pueden hacer las proyecciones
+    public List<LibroDto> proyeccion();
+
 }

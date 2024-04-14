@@ -1,11 +1,15 @@
 package com.springboot.mongodb.app.libros.services;
 
+import com.springboot.mongodb.app.libros.dto.AutorDto;
+import com.springboot.mongodb.app.libros.dto.AutorDto2;
+import com.springboot.mongodb.app.libros.dto.AutorDto3;
 import com.springboot.mongodb.app.libros.dto.LibroDto;
 import com.springboot.mongodb.app.libros.enums.CamposLibro;
 import com.springboot.mongodb.commons.microservicios.models.Autor;
 import com.springboot.mongodb.commons.microservicios.models.Libro;
 import org.springframework.data.domain.Page;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,5 +45,12 @@ public interface LibroService {
 
     public List<Libro> filtrar(String termino);
     public List<Autor> filtrarAutor(String termino, Integer edad);
+    public List<LibroDto> proyeccion();
+    public List<AutorDto> proyeccionAutor();
+    public List<AutorDto> aggregation(Date fecha);
+    public List<AutorDto3> aggregation2(Integer edad);
+    public Integer sumatoriaEdades();
+    public Integer sumatoriaEmailConMx();
+    //public List<Autor> autoresAg();
 
 }
