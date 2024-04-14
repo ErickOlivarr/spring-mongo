@@ -2,6 +2,7 @@ package com.springboot.mongodb.app.libros.services;
 
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoWriteException;
+import com.springboot.mongodb.app.libros.client.AutorClient;
 import com.springboot.mongodb.app.libros.dto.AutorDto;
 import com.springboot.mongodb.app.libros.dto.AutorDto2;
 import com.springboot.mongodb.app.libros.dto.AutorDto3;
@@ -12,6 +13,7 @@ import com.springboot.mongodb.app.libros.repository.AutorRepository;
 import com.springboot.mongodb.app.libros.repository.LibroRepository;
 import com.springboot.mongodb.commons.microservicios.models.Autor;
 import com.springboot.mongodb.commons.microservicios.models.Libro;
+import feign.FeignException;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,11 +32,16 @@ import java.util.stream.Collectors;
 @Service
 public class LibroServiceImpl implements LibroService {
 
+    //Abajo hubo algunas cosas que se comentaron porque esas cosas antes se habían puesto cuando teníamos las consultas solo de este lado pero despues todas las consultas para modificar la base de datos con los autores como crear, editar y eliminar de los autores, y tambien para encontrar por id de los autores, lo pasamos al microservicio de autores para usar el FeignClient aqui visto en los cursos de spring con eureka y spring con kubernetes, para tener mas la arquitectura de microservicios, y si es asi entonces en lugar de tener un proyecto de commons-microservicios como el que tenemos donde tenemos las clases de Autor y Libro, en lugar de eso podríamos mejor poner 2 microservicios de commons, uno para solo el Autor y otro para solo el Libro, aunque en este caso asi lo dejamos porque mas abajo tenemos algunas consultas de practica para consultas de select con mongodb tanto para libros como para autores, y pues tendríamos que mover las que son de autores en su respectivo microservicio de autores pero pues eso solo se hizo para practicar asi que asi lo dejamos
+
     @Autowired
     private LibroRepository libroRepository;
 
     @Autowired
     private AutorRepository autorRepository;
+
+    @Autowired
+    private AutorClient autorClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -48,6 +55,7 @@ public class LibroServiceImpl implements LibroService {
     @Override
     @Transactional //NOTA: Las transacciones en mongodb solo funcionan si ponemos la clase de MongoConfig que tenemos en este proyecto, se explica de eso ahi, checarlo
     public Libro guardar(Libro libro) {
+        /*
         //En mongodb no existen los cascades, aunque sí hay una forma de hacerlos pero no es tan facil como con JPA porque debemos crear unas clases manualmente y to-do eso, asi que mejor con mongodb se hacen asi sin cascades las cosas, y abajo se hizo de manera que se agregue un libro y que al mismo tiempo tambien se agregue un autor como si se tuviera el cascade de persist de JPA en el atributo autor del libro, de modo que en el JSON aqui pasaríamos un libro sin su id junto con su atributo autor sin su id para que se inserten los 2
         Libro libroDb = libroRepository.save(libro);
         Autor autor = autorRepository.save(libro.getAutor());
@@ -56,17 +64,30 @@ public class LibroServiceImpl implements LibroService {
         autor.setLibros(new HashSet<>(Arrays.asList(libroDb)));
         autorRepository.save(autor);
         return libroDb;
+        */
+
+        Libro libroDb = libroRepository.save(libro);
+        Autor autor = autorClient.guardar(libro.getAutor());
+        libroDb.setAutor(autor);
+        libroRepository.save(libroDb);
+        autor.setLibros(new HashSet<>(Arrays.asList(libroDb)));
+        autorClient.guardar(autor);
+        return libroDb;
+
     }
 
+    /*
     @Override
     @Transactional
     public Autor guardarAutor(Autor autor) {
         return autorRepository.save(autor);
     }
+    */
 
     @Override
     @Transactional
     public Libro guardarLibro(Libro libro) {
+        /*
         Libro libroDb = libroRepository.save(libro);
         Optional<Autor> autorOptional = autorRepository.findById(libroDb.getAutor().getId());
         if(!autorOptional.isPresent()) {
@@ -76,11 +97,24 @@ public class LibroServiceImpl implements LibroService {
         autor.getLibros().add(libroDb);
         autorRepository.save(autor);
         return libroDb;
+        */
+
+        Libro libroDb = libroRepository.save(libro);
+        try {
+            Autor autor = autorClient.encontrarPorId(libroDb.getAutor().getId());
+            autor.getLibros().add(libroDb);
+            autorClient.guardar(autor);
+            return libroDb;
+        } catch (FeignException e) {
+            throw new ErrorPersonalizado("No se encuentra el autor");
+        }
+
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {ErrorPersonalizado.class})
     public Libro actualizarLibro(String idLibro, Libro libro) {
+        /*
         Optional<Libro> libroOptional = encontrarPorId(idLibro);
         if(!libroOptional.isPresent()) {
             throw new ErrorPersonalizado("No existe libro");
@@ -109,12 +143,39 @@ public class LibroServiceImpl implements LibroService {
         libroDb.setAutor(libro.getAutor());
 
         return libroRepository.save(libroDb);
+        */
 
+        Optional<Libro> libroOptional = encontrarPorId(idLibro);
+        if(!libroOptional.isPresent()) {
+            throw new ErrorPersonalizado("No existe libro");
+        }
+
+        Libro libroDb = libroOptional.get();
+
+        try {
+            Autor autorNuevo = autorClient.encontrarPorId(libro.getAutor().getId());
+
+            Autor autorAntiguo = autorClient.encontrarPorId(libroDb.getAutor().getId());
+            autorAntiguo.getLibros().remove(libroDb);
+            autorClient.guardar(autorAntiguo);
+
+            autorNuevo.getLibros().add(libroDb);
+            autorClient.guardar(autorNuevo);
+
+            libroDb.setNombre(libro.getNombre());
+            libroDb.setIsbn(libro.getIsbn());
+            libroDb.setAutor(libro.getAutor());
+
+            return libroRepository.save(libroDb);
+        } catch(FeignException e) {
+            throw new ErrorPersonalizado("No existe autor");
+        }
     }
 
     @Override
     @Transactional
     public Libro actualizarLibroAutorNuevo(String idLibro, Libro libro) {
+        /*
         Optional<Libro> libroOptional = encontrarPorId(idLibro);
         if(!libroOptional.isPresent()) {
             throw new ErrorPersonalizado("No existe libro");
@@ -125,7 +186,7 @@ public class LibroServiceImpl implements LibroService {
         //Autor autorAntiguo = libroDb.getAutor(); //si lo hacía de esta forma daba error, por eso se hizo como está en la siguiente linea para obtener el autor antiguo
         Optional<Autor> autorAntiguoOp = autorRepository.findById(libroDb.getAutor().getId());
         if(!autorAntiguoOp.isPresent()) {
-            throw new ErrorPersonalizado("No existe libro");
+            throw new ErrorPersonalizado("No existe autor");
         }
         Autor autorAntiguo = autorAntiguoOp.get();
         autorAntiguo.getLibros().remove(libroDb);
@@ -138,7 +199,30 @@ public class LibroServiceImpl implements LibroService {
         libroDb.setIsbn(libro.getIsbn());
         libroDb.setAutor(autor);
         return libroRepository.save(libroDb);
+        */
 
+        Optional<Libro> libroOptional = encontrarPorId(idLibro);
+        if(!libroOptional.isPresent()) {
+            throw new ErrorPersonalizado("No existe libro");
+        }
+
+        Libro libroDb = libroOptional.get();
+
+        try {
+            Autor autorAntiguo = autorClient.encontrarPorId(libroDb.getAutor().getId());
+            autorAntiguo.getLibros().remove(libroDb);
+            autorClient.guardar(autorAntiguo);
+
+            libro.getAutor().setLibros(new HashSet<>(Arrays.asList(libroDb)));
+            Autor autor = autorClient.guardar(libro.getAutor());
+
+            libroDb.setNombre(libro.getNombre());
+            libroDb.setIsbn(libro.getIsbn());
+            libroDb.setAutor(autor);
+            return libroRepository.save(libroDb);
+        } catch (FeignException e) {
+            throw new ErrorPersonalizado("No existe autor");
+        }
 
     }
 
@@ -151,6 +235,7 @@ public class LibroServiceImpl implements LibroService {
     @Override
     @Transactional
     public void eliminar(String id) {
+        /*
         Optional<Libro> libroOp = encontrarPorId(id);
         if(!libroOp.isPresent()) {
             throw new ErrorPersonalizado("No existe el libro");
@@ -167,14 +252,41 @@ public class LibroServiceImpl implements LibroService {
         autorRepository.save(autor);
 
         libroRepository.deleteById(id);
+        */
+
+        Optional<Libro> libroOp = encontrarPorId(id);
+        if(!libroOp.isPresent()) {
+            throw new ErrorPersonalizado("No existe el libro");
+        }
+
+        Libro libro = libroOp.get();
+
+        try {
+            Autor autor = autorClient.encontrarPorId(libro.getAutor().getId());
+            autor.getLibros().remove(libro);
+            autorClient.guardar(autor);
+
+            libroRepository.deleteById(id);
+        } catch (FeignException e) {
+            throw new ErrorPersonalizado("No existe el autor");
+        }
     }
 
+    @Override
+    @Transactional
+    public void guardarVariosLibros(List<Libro> libros) {
+        libroRepository.saveAll(libros);
+    }
+
+    /*
     @Override
     @Transactional(readOnly = true)
     public List<Autor> listarAutores() {
         return autorRepository.findAll();
     }
+    */
 
+    /*
     @Override
     @Transactional
     public void eliminarAutor(String idAutor) {
@@ -193,7 +305,7 @@ public class LibroServiceImpl implements LibroService {
 
 
     }
-
+    */
 
 
 

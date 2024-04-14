@@ -1,0 +1,16 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: msvc-libros
+          uri: lb://msvc-libros
+          predicates:
+            - Path=/api/libros/**
+          filters:
+            - StripPrefix=2
+        - id: msvc-autores
+          uri: lb://msvc-autores
+          predicates:
+            - Path=/api/autores/**
+          filters:
+            - StripPrefix=2

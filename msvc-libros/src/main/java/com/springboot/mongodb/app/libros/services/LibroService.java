@@ -19,7 +19,7 @@ public interface LibroService {
 
     public Libro guardar(Libro libro);
 
-    public Autor guardarAutor(Autor autor);
+    //public Autor guardarAutor(Autor autor);
 
     public Libro guardarLibro(Libro libro);
 
@@ -31,9 +31,11 @@ public interface LibroService {
 
     public void eliminar(String id);
 
-    public List<Autor> listarAutores();
+    //public List<Autor> listarAutores();
 
-    public void eliminarAutor(String idAutor);
+    //public void eliminarAutor(String idAutor);
+
+    public void guardarVariosLibros(List<Libro> libros);
 
 
 

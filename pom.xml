@@ -21,6 +21,7 @@
         <module>msvc-libros</module>
         <module>msvc-autores</module>
         <module>commons-microservicios</module>
+        <module>msvc-gateway</module>
     </modules>
 
     <properties>
